@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 import torch
 from torch import nn
+import torch.utils.data
 
 from .layers import DenseModule
 from .utils import seed_torch, sigmoid
@@ -38,7 +39,7 @@ class NNClassifier(BaseEstimator, ClassifierMixin):
         self.n_epochs = n_epochs
         self.batch_size = batch_size
         self.device = torch.device(device)
-        self.verbose = verbose
+        self.verbose = int(verbose)
 
         self.loss_fn = nn.BCEWithLogitsLoss(reduction='mean')
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate)
@@ -59,7 +60,7 @@ class NNClassifier(BaseEstimator, ClassifierMixin):
         train = torch.utils.data.TensorDataset(X_train, y_train)
         train_loader = torch.utils.data.DataLoader(
             train, batch_size=self.batch_size, shuffle=True)
-            
+
         if self.verbose and X_valid is not None and y_valid is not None:
             X_valid = torch.tensor(X_valid, dtype=torch.float32).to(self.device)
             y_valid = torch.tensor(y_valid[:, np.newaxis], dtype=torch.float32).to(self.device)
@@ -91,7 +92,7 @@ class NNClassifier(BaseEstimator, ClassifierMixin):
                 self.optimizer.step()
                 avg_loss += loss.item() / len(train_loader)
 
-            if self.verbose:
+            if self.verbose and epoch % self.verbose == 0:
                 if valid_loader:
                     self.model.eval()
                     valid_preds = np.zeros(X_valid.shape[0])
