@@ -4,6 +4,10 @@ from pathlib import Path
 import requests
 import time
 
+import numpy as np
+from sklearn.metrics import roc_auc_score
+from tqdm import tqdm
+
 
 class Timer:
     def __init__(self, out=print, init=True):
@@ -15,21 +19,9 @@ class Timer:
         if init:
             self.out('Start.\n')
 
-    @staticmethod
-    def _calc_time(start_time):
-        elapsed_time = time.time() - start_time
-        if elapsed_time < 60:
-            return f'{elapsed_time:.1f} sec'
-        elif elapsed_time < 3600:
-            elapsed_time = round(elapsed_time)
-            return f'{elapsed_time // 60} min {elapsed_time % 60} sec'
-        else:
-            elapsed_time = round(elapsed_time // 60)  # min
-            return f'{elapsed_time // 60} hour {elapsed_time % 60} min'
-
     def _step_out(self):
         if self.msg:
-            self.out(f'[{self.msg}] done in {self._calc_time(self.time)}.\n')
+            self.out(f'[{self.msg}] done in {calc_time(self.time)}.\n')
 
     def step(self, msg):
         self._step_out()
@@ -47,15 +39,12 @@ class Timer:
 
     def finish(self):
         self._step_out()
-        elapsed_time = self._calc_time(self.start_time)
+        elapsed_time = calc_time(self.start_time)
         self.out(f'All processes done in {elapsed_time}.')
         return elapsed_time
 
 
-@contextmanager
-def step_timer(msg, out=print, init=True):
-
-    def _calc_time(start_time):
+def calc_time(start_time):
         elapsed_time = time.time() - start_time
         if elapsed_time < 60:
             return f'{elapsed_time:.1f} sec'
@@ -66,11 +55,14 @@ def step_timer(msg, out=print, init=True):
             elapsed_time = round(elapsed_time // 60)  # min
             return f'{elapsed_time // 60} hour {elapsed_time % 60} min'
 
+
+@contextmanager
+def step_timer(msg, out=print, init=True):
     t0 = time.time()
     if init:
         out(f'[{msg}] start.')
     yield
-    out(f'[{msg}] done in {_calc_time(t0)}.')
+    out(f'[{msg}] done in {calc_time(t0)}.')
 
 
 def setup_logger(logger, log_file_path, clear_log_file=True):
@@ -112,3 +104,17 @@ def send_error_to_line(message):
             error: {e}'''
         send_line_notification(error_message)
         raise Exception(e)
+
+
+def search_weight(train_preds_1, train_preds_2, y_train):
+    best_weight = 0
+    best_score = 0
+
+    for i in tqdm(np.arange(0, 1, 1e-3)):
+        train_preds = i * train_preds_1 + (1 - i) * train_preds_2
+        score = roc_auc_score(y_train, train_preds)
+        if score > best_score:
+            best_weight = i
+            best_score = score
+    
+    return best_weight, best_score

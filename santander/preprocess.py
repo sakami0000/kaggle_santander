@@ -68,3 +68,9 @@ def augment(x, y, t=2):
 
 def rank_scale(pred):
     return rankdata(pred) / len(pred)
+
+
+def add_features(x_train, x_test):
+    x_train['diff_21_22'] = x_train['var_22'] - x_train['var_21']
+    x_test['diff_21_22'] = x_test['var_22'] - x_test['var_21']
+    return x_train, x_test

@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 
-from ...preprocess import augment, rank_scale
+from ...preprocess import augment
 from ...utils import step_timer
 
 
@@ -31,7 +31,7 @@ def train_lgb(x_train, y_train, x_test, params, logger,
 
             y_preds = clf.predict(x_train.iloc[valid_idx], num_iteration=clf.best_iteration)
             train_preds[valid_idx] = y_preds
-            test_preds += rank_scale(clf.predict(x_test, num_iteration=clf.best_iteration)) / n_splits
+            test_preds += clf.predict(x_test, num_iteration=clf.best_iteration) / n_splits
 
             logger.info(f'[fold {fold + 1}] best iteration: {clf.best_iteration}')
             logger.info(f'[fold {fold + 1}] auc score: {roc_auc_score(valid_fold_y, y_preds):<8.5f}')
