@@ -8,9 +8,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 
 from santander.load_data import load_data
+from santander.models.autogbt.train import train_autogbt
 from santander.models.lightgbm.train import train_lgb
 from santander.models.nn.train import train_nn
-from santander.preprocess import rank_gauss
+from santander.preprocess import rank_gauss, add_features
 from santander.utils import (
     Timer, step_timer, setup_logger,
     send_line_notification, send_error_to_line,
@@ -31,7 +32,7 @@ def main_lgb():
     num_round = 1000000
     early_stop = 4000
     seed = 42
-    features = ['main', 'dae20']
+    features = ['main']
 
     params = {
         'bagging_freq': 5,
@@ -60,6 +61,8 @@ def main_lgb():
     x_train, y_train, train_ids = train
     x_test, test_ids = test
 
+    x_train, x_test = add_features(x_train, x_test)
+
     # train
     timer.step('train')
     train_preds, test_preds = train_lgb(x_train, y_train, x_test, params, logger,
@@ -79,7 +82,7 @@ def main_lgb():
 
     elapsed_time = timer.finish()
     message = f'''main_lgb done in {elapsed_time}.
-        description: Single LGBM + augmentation + DAE features.
+        description: Single LGBM + augmentation.
         cv score: {roc_auc_score(y_train, train_preds):<8.5f}'''
     send_line_notification(message)
 
@@ -92,18 +95,19 @@ def main_nn():
     # set params
     n_splits = 5
     seed = 42
-    features = ['main', 'dae20']
+    features = ['main']
 
     params = {
         'hidden_sizes': [64, 64],
         'activation': 'swish',
-        'dropout_rate': None,
+        'dropout_rate': 0.1,
         'learning_rate': 1e-3,
-        'n_epochs': 30,
+        'n_epochs': 100,
         'batch_size': 32,
         'device': 'cpu',
         'random_state': seed,
-        'verbose': False
+        'out': logger.info,
+        'verbose': True
     }
 
     # load data
@@ -113,6 +117,8 @@ def main_nn():
     train, test = load_data(features)
     x_train, y_train, train_ids = train
     x_test, test_ids = test
+
+    x_train, x_test = add_features(x_train, x_test)
 
     # scale
     timer.step('scale')
@@ -139,8 +145,51 @@ def main_nn():
 
     elapsed_time = timer.finish()
     message = f'''main_nn done in {elapsed_time}.
-        description: Single NN + augmentation + DAE features.
+        description: Single NN + augmentation.
         cv score: {roc_auc_score(y_train, train_preds):<8.5f}'''
+    send_line_notification(message)
+
+
+def main_autogbt():
+    # set logger
+    logger = getLogger(__name__)
+    setup_logger(logger, './log/autogbt.log')
+
+    # set params
+    n_trials = 100
+    seed = 42
+    features = ['main']
+
+    # load data
+    timer = Timer(out=logger.info)
+    timer.step('load data')
+
+    train, test = load_data(features)
+    x_train, y_train, train_ids = train
+    x_test, test_ids = test
+
+    x_train, x_test = add_features(x_train, x_test)
+
+    # train
+    timer.step('train')
+    train_preds, test_preds = train_autogbt(x_train, y_train, x_test,
+                                            n_trials=n_trials, seed=seed)
+
+    # export to csv
+    timer.step('submit')
+    pd.DataFrame({
+        'ID_code': train_ids,
+        'target': train_preds
+    }).to_csv('./output/train_preds_autogbt.csv', index=False)
+    pd.DataFrame({
+        'ID_code': test_ids,
+        'target': test_preds
+    }).to_csv('./output/test_preds_autogbt.csv', index=False)
+
+    elapsed_time = timer.finish()
+    message = f'''main_autogbt done in {elapsed_time}.
+        description: Single AutoGBT.
+        train score: {roc_auc_score(y_train, train_preds):<8.5f}'''
     send_line_notification(message)
 
 
@@ -181,5 +230,5 @@ def main_ensemble():
 
 
 if __name__ == '__main__':
-    with send_error_to_line('function main_lgb failed.'):
-        main_lgb()
+    with send_error_to_line('function main_ensemble failed.'):
+        main_ensemble()

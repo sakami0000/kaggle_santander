@@ -6,6 +6,7 @@ import torch
 from torch import nn
 import torch.utils.data
 
+from .callbacks import EarlyStopping
 from .layers import DenseModule
 from .utils import seed_torch, sigmoid
 
@@ -31,7 +32,7 @@ class NNClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, input_size, hidden_sizes=[64, 64],
                  activation='relu', dropout_rate=None,
                  learning_rate=0.001, n_epochs=5, batch_size=64,
-                 device='cuda:0', random_state=None, verbose=False):
+                 device='cuda:0', out=print, random_state=None, verbose=False):
         self.model = Net(input_size=input_size,
                          hidden_sizes=hidden_sizes,
                          activation=activation,
@@ -39,16 +40,21 @@ class NNClassifier(BaseEstimator, ClassifierMixin):
         self.n_epochs = n_epochs
         self.batch_size = batch_size
         self.device = torch.device(device)
+        self.out = out
         self.verbose = int(verbose)
 
         self.loss_fn = nn.BCEWithLogitsLoss(reduction='mean')
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate)
-        self.scheduler = None
+        self.early_stopping = EarlyStopping(patience=10, model_path='./output/', out=self.out, verbose=self.verbose)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=3)
 
         seed_torch(random_state)
         self.model.to(self.device)
 
     def fit(self, X, y, X_valid=None, y_valid=None):
+        if self.early_stopping:
+            assert X_valid is not None and y_valid is not None
+
         X = np.array(X)
         y = np.array(y)
         X_valid = np.array(X_valid)
@@ -80,9 +86,6 @@ class NNClassifier(BaseEstimator, ClassifierMixin):
             self.model.train()
             avg_loss = 0.
 
-            if self.scheduler:
-                self.scheduler.step()
-
             for x_batch, y_batch in train_loader:
                 y_pred = self.model(x_batch)
 
@@ -92,7 +95,7 @@ class NNClassifier(BaseEstimator, ClassifierMixin):
                 self.optimizer.step()
                 avg_loss += loss.item() / len(train_loader)
 
-            if self.verbose and epoch % self.verbose == 0:
+            if self.early_stopping or (self.verbose and epoch % self.verbose == 0):
                 if valid_loader:
                     self.model.eval()
                     valid_preds = np.zeros(X_valid.shape[0])
@@ -106,15 +109,27 @@ class NNClassifier(BaseEstimator, ClassifierMixin):
                         valid_preds[i * self.batch_size:(i + 1) * self.batch_size] = sigmoid(
                             y_pred.cpu().numpy())[:, 0]
                     
-                    elapsed_time = time.time() - start_time
-                    print('Epoch {}/{} \t loss: {} \t valid loss: {} \t time: {:.1f}s'.format(
-                        epoch + 1, self.n_epochs, avg_loss, avg_val_loss, elapsed_time))
+                    if self.verbose and epoch % self.verbose == 0:
+                        elapsed_time = time.time() - start_time
+                        self.out('Epoch {}/{} \t loss: {} \t valid loss: {} \t time: {:.1f}s'.format(
+                            epoch + 1, self.n_epochs, avg_loss, avg_val_loss, elapsed_time))
+
+                    if self.scheduler:
+                        self.scheduler.step(avg_val_loss)
+                    
+                    if self.early_stopping:
+                        self.early_stopping(avg_val_loss, self.model)
+                        if self.early_stopping.early_stop:
+                            self.out('early stopping.')
+                            break
+
                 else:
                     elapsed_time = time.time() - start_time
-                    print('Epoch {}/{} \t loss: {} \t time: {:.1f}s'.format(
+                    self.out('Epoch {}/{} \t loss: {} \t time: {:.1f}s'.format(
                         epoch + 1, self.n_epochs, avg_loss, elapsed_time))
         
-        return valid_preds
+        if self.early_stopping:
+            self.model.load_state_dict(torch.load('./output/checkpoint.pt'))
 
     def predict_proba(self, X):
         X = np.array(X)

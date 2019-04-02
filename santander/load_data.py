@@ -17,7 +17,7 @@ def load_data(features=None):
 
         test = pd.read_csv(TEST_DATA, dtype=dtypes)
 
-        dtypes['target'] = 'int8'
+        dtypes['target'] = 'int32'
         train = pd.read_csv(TRAIN_DATA, dtype=dtypes)
 
     x_train = train.drop(['ID_code', 'target'], axis=1)

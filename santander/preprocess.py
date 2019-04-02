@@ -51,7 +51,7 @@ def augment(x, y, t=2):
         ids = np.arange(x1.shape[0])
         for c in range(x1.shape[1]):
             np.random.shuffle(ids)
-            x1[:,c] = x1[ids][:,c]
+            x1[:, c] = x1[ids][:, c]
         xn.append(x1)
 
     xs = np.vstack(xs)
@@ -71,6 +71,4 @@ def rank_scale(pred):
 
 
 def add_features(x_train, x_test):
-    x_train['diff_21_22'] = x_train['var_22'] - x_train['var_21']
-    x_test['diff_21_22'] = x_test['var_22'] - x_test['var_21']
     return x_train, x_test

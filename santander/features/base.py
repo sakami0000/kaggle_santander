@@ -27,6 +27,7 @@ class Feature(metaclass=ABCMeta):
         if not overwrite and self.check_existence():
             self.out(f'[{self.name}] already exists. skipped.')
             return
+
         with step_timer(self.name, out=self.out):
             self.create_features()
 
