@@ -28,9 +28,9 @@ def main_lgb():
     setup_logger(logger, './log/lgb.log')
 
     # set params
-    n_splits = 5
+    n_splits = 10
     num_round = 1000000
-    early_stop = 4000
+    early_stop = 5000
     seed = 42
     features = ['main']
 
@@ -82,7 +82,7 @@ def main_lgb():
 
     elapsed_time = timer.finish()
     message = f'''main_lgb done in {elapsed_time}.
-        description: Single LGBM + augmentation.
+        description: Single LGBM + augmentation, hist features.
         cv score: {roc_auc_score(y_train, train_preds):<8.5f}'''
     send_line_notification(message)
 
@@ -230,5 +230,5 @@ def main_ensemble():
 
 
 if __name__ == '__main__':
-    with send_error_to_line('function main_ensemble failed.'):
-        main_ensemble()
+    with send_error_to_line('function main_lgb failed.'):
+        main_lgb()

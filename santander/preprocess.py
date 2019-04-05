@@ -71,4 +71,10 @@ def rank_scale(pred):
 
 
 def add_features(x_train, x_test):
+    x = pd.concat([x_train, x_test], ignore_index=True, sort=False)
+    columns = ['var_12', 'var_13', 'var_108', 'var_126', 'var_68']
+    for var in columns:
+        hist, bin_edges = np.histogram(x[var], bins=1000, density=True)
+        x_train['test_' + var] = [hist[np.searchsorted(bin_edges, ele) - 1] for ele in x_train[var]]
+        x_test['test_' + var] = [hist[np.searchsorted(bin_edges, ele) - 1] for ele in x_test[var]]
     return x_train, x_test
