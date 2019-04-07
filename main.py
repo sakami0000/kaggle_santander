@@ -29,6 +29,7 @@ def main_lgb():
 
     # set params
     n_splits = 10
+    n_models = 10
     num_round = 1000000
     early_stop = 5000
     seed = 42
@@ -66,8 +67,8 @@ def main_lgb():
     # train
     timer.step('train')
     train_preds, test_preds = train_lgb(x_train, y_train, x_test, params, logger,
-                                        n_splits=n_splits, num_round=num_round,
-                                        early_stop=early_stop, seed=seed)
+                                        n_splits=n_splits, n_models=n_models,
+                                        num_round=num_round, early_stop=early_stop, seed=seed)
 
     # export to csv
     timer.step('submit')
@@ -82,7 +83,7 @@ def main_lgb():
 
     elapsed_time = timer.finish()
     message = f'''main_lgb done in {elapsed_time}.
-        description: Single LGBM + augmentation, hist features.
+        description: Single LGBM + augmentation, seed average.
         cv score: {roc_auc_score(y_train, train_preds):<8.5f}'''
     send_line_notification(message)
 

@@ -3,6 +3,7 @@ from torch import nn
 
 
 class BatchSwapNoise(nn.Module):
+
     def __init__(self, prob):
         super().__init__()
         self.prob = prob

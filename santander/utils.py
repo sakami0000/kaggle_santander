@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 
 class Timer:
+
     def __init__(self, out=print, init=True):
         self.out = out
         self.start_time = time.time()
@@ -45,15 +46,15 @@ class Timer:
 
 
 def calc_time(start_time):
-        elapsed_time = time.time() - start_time
-        if elapsed_time < 60:
-            return f'{elapsed_time:.1f} sec'
-        elif elapsed_time < 3600:
-            elapsed_time = round(elapsed_time)
-            return f'{elapsed_time // 60} min {elapsed_time % 60} sec'
-        else:
-            elapsed_time = round(elapsed_time // 60)  # min
-            return f'{elapsed_time // 60} hour {elapsed_time % 60} min'
+    elapsed_time = time.time() - start_time
+    if elapsed_time < 60:
+        return f'{elapsed_time:.1f} sec'
+    elif elapsed_time < 3600:
+        elapsed_time = round(elapsed_time)
+        return f'{elapsed_time // 60} min {elapsed_time % 60} sec'
+    else:
+        elapsed_time = round(elapsed_time // 60)  # min
+        return f'{elapsed_time // 60} hour {elapsed_time % 60} min'
 
 
 @contextmanager

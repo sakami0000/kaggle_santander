@@ -13,6 +13,7 @@ class EarlyStopping:
         out: How to output the log.
         verbose: If True, prints a message for each validation loss improvement. 
     """
+
     def __init__(self, patience=10, model_path='', out=print, verbose=False):
         self.patience = patience
         self.model_path = Path(model_path)

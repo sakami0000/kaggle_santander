@@ -8,6 +8,7 @@ from ..utils import step_timer
 
 
 class Feature(metaclass=ABCMeta):
+
     def __init__(self, data_dir, out=print, prefix='', suffix=''):
         self.out = out
         self.prefix = prefix + '_' if prefix else ''

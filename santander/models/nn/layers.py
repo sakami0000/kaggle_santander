@@ -3,6 +3,7 @@ from torch import nn
 
 
 class Swish(nn.Module):
+
     def __init__(self, inplace=False):
         super().__init__()
         self.inplace = inplace
@@ -16,6 +17,7 @@ class Swish(nn.Module):
 
 
 class DenseModule(nn.Module):
+
     def __init__(self, input_size, output_size, activation='relu', dropout_rate=0.1):
         super(DenseModule, self).__init__()
         activations = {

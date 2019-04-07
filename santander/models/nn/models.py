@@ -12,6 +12,7 @@ from .utils import seed_torch, sigmoid
 
 
 class Net(nn.Module):
+
     def __init__(self, input_size, hidden_sizes=[64, 64],
                  output_size=1, activation='relu', dropout_rate=None):
         super(Net, self).__init__()
@@ -29,6 +30,7 @@ class Net(nn.Module):
 
 
 class NNClassifier(BaseEstimator, ClassifierMixin):
+
     def __init__(self, input_size, hidden_sizes=[64, 64],
                  activation='relu', dropout_rate=None,
                  learning_rate=0.001, n_epochs=5, batch_size=64,

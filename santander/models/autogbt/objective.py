@@ -2,6 +2,7 @@ from autogbt import Objective
 
 
 class CustomObjective(Objective):
+
     def get_param(self, trial):
         return {
             'learning_rate': 0.01,

@@ -11,6 +11,7 @@ from ..preprocess import rank_gauss
 
 
 class Main(Feature):
+
     def create_features(self):
         self.out(f'[{self.name}] loading data')
         train, test = load_data()
@@ -26,6 +27,7 @@ class Main(Feature):
 
 
 class DAE(Feature):
+
     def __init__(self, device='cuda:0', **kwargs):
         super().__init__(**kwargs)
         self.device = device

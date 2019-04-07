@@ -5,6 +5,7 @@ from .layers import BatchSwapNoise
 
 
 class DenoisedAutoencoder(nn.Module):
+
     def __init__(self):
         super().__init__()
         self.noise = BatchSwapNoise(0.15)
