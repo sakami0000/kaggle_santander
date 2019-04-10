@@ -68,7 +68,3 @@ def augment(x, y, t=2):
 
 def rank_scale(pred):
     return rankdata(pred) / len(pred)
-
-
-def add_features(x_train, x_test):
-    return x_train, x_test

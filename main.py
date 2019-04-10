@@ -11,7 +11,7 @@ from santander.load_data import load_data
 from santander.models.autogbt.train import train_autogbt
 from santander.models.lightgbm.train import train_lgb
 from santander.models.nn.train import train_nn
-from santander.preprocess import rank_gauss, add_features
+from santander.preprocess import rank_gauss
 from santander.utils import (
     Timer, step_timer, setup_logger,
     send_line_notification, send_error_to_line,
@@ -28,30 +28,29 @@ def main_lgb():
     setup_logger(logger, './log/lgb.log')
 
     # set params
-    n_splits = 10
-    n_models = 10
+    n_splits = 5
     num_round = 1000000
     early_stop = 5000
     seed = 42
     features = ['main']
 
     params = {
-        'bagging_freq': 5,
-        'bagging_fraction': 0.331,
-        'boost_from_average': False,
-        'boost': 'gbdt',
-        'feature_fraction': 0.0405,
-        'learning_rate': 0.0063,
-        'max_depth': -1,
-        'metric': 'auc',
-        'min_data_in_leaf': 80,
-        'min_sum_hessian_in_leaf': 10.0,
-        'num_leaves': 13,
-        'num_threads': 8,
         'objective': 'binary',
-        'seed': seed,
+        'metric': 'auc',
+        'boosting': 'gbdt',
+        'max_depth': -1,
+        'num_leaves': 31,
+        'learning_rate': 0.01,
+        'bagging_freq': 5,
+        'bagging_fraction': 0.4,
+        'feature_fraction': 0.05,
+        'min_data_in_leaf': 150,
+        'min_sum_hessian_in_leaf': 10,
         'tree_learner': 'serial',
-        'verbosity': 1
+        'boost_from_average': 'false',
+        'bagging_seed': seed,
+        'verbosity': 1,
+        'seed': seed
     }
 
     # load data
@@ -62,13 +61,11 @@ def main_lgb():
     x_train, y_train, train_ids = train
     x_test, test_ids = test
 
-    x_train, x_test = add_features(x_train, x_test)
-
     # train
     timer.step('train')
     train_preds, test_preds = train_lgb(x_train, y_train, x_test, params, logger,
-                                        n_splits=n_splits, n_models=n_models,
-                                        num_round=num_round, early_stop=early_stop, seed=seed)
+                                        n_splits=n_splits, num_round=num_round,
+                                        early_stop=early_stop, seed=seed)
 
     # export to csv
     timer.step('submit')
@@ -119,8 +116,6 @@ def main_nn():
     x_train, y_train, train_ids = train
     x_test, test_ids = test
 
-    x_train, x_test = add_features(x_train, x_test)
-
     # scale
     timer.step('scale')
     x = pd.concat([x_train, x_test], ignore_index=True, sort=False)
@@ -168,8 +163,6 @@ def main_autogbt():
     train, test = load_data(features)
     x_train, y_train, train_ids = train
     x_test, test_ids = test
-
-    x_train, x_test = add_features(x_train, x_test)
 
     # train
     timer.step('train')
